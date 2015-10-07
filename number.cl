@@ -40,8 +40,33 @@
     )
 )
 
+;;; + -> λab.λf.λx.((((a succ) b) f) x)
 (defun ya_add (a b)
-    #'(lambda (f x) (funcall a f (funcall b f x)))
+    #'(lambda (f)
+        #'(lambda (x)
+		(funcall (funcall (funcall (funcall a #'succ) b) f) x)
+	)
+    )
+)
+
+;;; x -> λab.λf.λx.((((a +b) 0) f) x)
+(defun ya_mul (a b)
+    #'(lambda (f)
+        #'(lambda (x)
+		(let ((add_b #'(lambda (z) (ya_add b z))))
+		(funcall (funcall (funcall (funcall a add_b) #'zero) f) x))
+	)
+    )
+)
+
+;;; ^ -> λab.λf.λx.((((b *a) 1) f) x)
+(defun ya_pow (a b)
+    #'(lambda (f)
+        #'(lambda (x)
+                (let ((mul_a #'(lambda (z) (ya_mul a z))))
+                (funcall (funcall (funcall (funcall b mul_a) #'one) f) x))
+        )
+    )
 )
 
 ; a helper func
@@ -60,5 +85,12 @@
     (funcall (funcall (add #'two #'three) #'myfun) 0)
     (funcall (funcall (mul #'two #'three) #'myfun) 0)
     (funcall (funcall (pow #'two #'three) #'myfun) 0)
+)
+
+(format t
+    "2+3=~A~%2*3=~A~%2^3=~A~%"
+    (funcall (funcall (ya_add #'two #'three) #'myfun) 0)
+    (funcall (funcall (ya_mul #'two #'three) #'myfun) 0)
+    (funcall (funcall (ya_pow #'two #'three) #'myfun) 0)
 )
 
